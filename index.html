@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1d4f9e">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="I parked here">
+<title>I parked here</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sign:#1d4f9e; --sign-ink:#ffffff; --asphalt:#2b2e33; --line:#f2c230;
+  --bg:#eef0f2; --card:#ffffff; --ink:#1c1f23; --muted:#5d636b; --rule:#d6dade; --danger:#b3261e;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --sign:#3b72c9; --bg:#17191c; --card:#22252a; --ink:#eceef0; --muted:#a3a9b1; --rule:#363a40; --asphalt:#101214; --danger:#f2867d;
+}}
+:root[data-theme="dark"]{ --sign:#3b72c9; --bg:#17191c; --card:#22252a; --ink:#eceef0; --muted:#a3a9b1; --rule:#363a40; --asphalt:#101214; --danger:#f2867d; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Overpass,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:17px;line-height:1.45}
+main{max-width:30rem;margin:0 auto;padding:1.25rem 1rem 3rem}
+header{display:flex;align-items:center;gap:.85rem;margin-bottom:1.25rem}
+.p{flex:none;width:3.4rem;height:3.4rem;border-radius:.6rem;background:var(--sign);color:var(--sign-ink);
+  display:grid;place-items:center;font-weight:900;font-size:2.4rem;line-height:1;box-shadow:inset 0 0 0 3px var(--sign-ink),0 0 0 2px var(--sign);padding-top:.25rem}
+h1{font-size:1.5rem;font-weight:900;margin:0;letter-spacing:-.01em}
+.sub{margin:0;color:var(--muted);font-size:.9rem}
+
+/* stallo: il pezzo forte */
+.stall{position:relative;background:var(--asphalt);color:#f4f5f6;border-radius:.9rem;padding:1.4rem 1.25rem 1.25rem;
+  border-left:6px solid var(--line);border-right:6px solid var(--line);overflow:hidden}
+.stall.empty{text-align:center;padding:2.2rem 1.25rem}
+.stall .when{font-size:2rem;font-weight:900;line-height:1.1;margin:0}
+.stall .ago{color:#c3c8ce;margin:.2rem 0 1rem;font-size:.95rem}
+.stall .note{font-size:1.25rem;font-weight:800;color:var(--line);margin:0 0 .9rem;word-wrap:break-word}
+.stall img{width:100%;border-radius:.5rem;display:block;margin:0 0 1rem;max-height:16rem;object-fit:cover}
+.stall .meta{font-size:.85rem;color:#c3c8ce;margin:0 0 1rem}
+.stall .empty-txt{font-size:1.15rem;font-weight:600;margin:0}
+.stall .empty-txt small{display:block;color:#c3c8ce;font-weight:400;font-size:.9rem;margin-top:.3rem}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;min-height:3.4rem;border:0;border-radius:.65rem;
+  font:inherit;font-weight:800;font-size:1.1rem;cursor:pointer;text-decoration:none;padding:.6rem 1rem}
+.btn:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--line);outline-offset:2px}
+.btn.go{background:var(--line);color:#1c1f23}
+.btn.primary{background:var(--sign);color:#fff;font-size:1.25rem;min-height:4rem}
+.btn.ghost{background:transparent;color:inherit;box-shadow:inset 0 0 0 2px currentColor;font-weight:600;font-size:1rem;min-height:3rem}
+.btn[disabled]{opacity:.55;cursor:wait}
+.row{display:grid;gap:.6rem}
+.mt{margin-top:.6rem}
+
+section.form{background:var(--card);border-radius:.9rem;padding:1.1rem;margin-top:1.1rem;border:1px solid var(--rule)}
+label{display:block;font-weight:600;font-size:.95rem;margin:0 0 .3rem}
+input[type=text]{width:100%;font:inherit;padding:.75rem .8rem;border-radius:.5rem;border:1px solid var(--rule);background:var(--bg);color:var(--ink)}
+.hint{color:var(--muted);font-size:.85rem;margin:.3rem 0 .9rem}
+.photo-pick{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem}
+.photo-pick img{width:3.5rem;height:3.5rem;object-fit:cover;border-radius:.4rem}
+.status{font-size:.9rem;margin:.7rem 0 0;color:var(--muted);min-height:1.3em}
+.status.err{color:var(--danger)}
+
+h2{font-size:1.05rem;font-weight:800;margin:2rem 0 .5rem}
+ol.hist{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
+ol.hist li{display:flex;justify-content:space-between;align-items:center;gap:.75rem;padding:.75rem 0;border-bottom:1px solid var(--rule)}
+ol.hist .t{font-weight:600}
+ol.hist .n{color:var(--muted);font-size:.9rem}
+ol.hist a{color:var(--sign);font-weight:700;white-space:nowrap}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) ol.hist a{color:#8fb3ec} }
+.sync{color:var(--muted);font-size:.8rem;text-align:center;margin-top:2rem}
+.hidden{display:none!important}
+@media (prefers-reduced-motion:no-preference){ .stall.fresh{animation:pop .5s ease-out} }
+@keyframes pop{from{transform:scale(.97);opacity:.6}to{transform:none;opacity:1}}
+details.sb{background:var(--card);border:1px solid var(--rule);border-radius:.9rem;margin-top:2rem;padding:0 1.1rem}
+details.sb summary{cursor:pointer;font-weight:800;padding:1rem 0;list-style:none;display:flex;justify-content:space-between;gap:.5rem}
+details.sb summary::-webkit-details-marker{display:none}
+details.sb summary .state{font-weight:600;color:var(--muted);font-size:.9rem}
+details.sb[open] summary{border-bottom:1px solid var(--rule);margin-bottom:1rem}
+details.sb .inner{padding-bottom:1.1rem}
+.btn.small{width:auto;min-height:2.8rem;font-size:.95rem;padding:.4rem .9rem}
+.field{margin-bottom:.9rem}
+
+
+.stalls{display:grid;gap:.9rem}
+.stall .car{display:inline-block;background:var(--line);color:#1c1f23;font-weight:900;font-size:.95rem;padding:.15rem .6rem;border-radius:.35rem;margin:0 0 .7rem}
+.choose legend{font-weight:600;font-size:.95rem;margin:0 0 .45rem;padding:0}
+fieldset.choose{border:0;margin:0 0 1rem;padding:0}
+.chips{display:flex;flex-wrap:wrap;gap:.5rem}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.chip span{display:block;padding:.6rem 1rem;border-radius:2rem;border:2px solid var(--rule);font-weight:700;background:var(--bg)}
+.chip span small{display:block;font-weight:400;font-size:.75rem;color:var(--muted)}
+.chip input:checked + span{background:var(--sign);border-color:var(--sign);color:#fff}
+.chip input:checked + span small{color:#dfe7f5}
+.chip input:focus-visible + span{outline:3px solid var(--line);outline-offset:2px}
+.no-veh{background:var(--bg);border-radius:.5rem;padding:.8rem;margin:0 0 1rem;font-size:.95rem}
+ul.veh{list-style:none;margin:0 0 .9rem;padding:0;border-top:1px solid var(--rule)}
+ul.veh li{display:flex;align-items:center;gap:.5rem;padding:.55rem 0;border-bottom:1px solid var(--rule)}
+ul.veh .nm{flex:1;font-weight:700}
+.link{background:none;border:0;font:inherit;color:var(--sign);font-weight:700;cursor:pointer;padding:.4rem}
+.link.del{color:var(--danger)}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .link:not(.del){color:#8fb3ec} }
+.add-veh{display:flex;gap:.5rem}
+.add-veh input{flex:1}
+pre.sql{background:var(--bg);border:1px solid var(--rule);border-radius:.5rem;padding:.7rem;font-size:.72rem;line-height:1.4;overflow-x:auto;max-height:12rem;margin:.4rem 0 .5rem;white-space:pre}
+.code-box{display:flex;gap:.5rem;align-items:center}
+.code-box input{flex:1}
+details.sb ol{padding-left:1.2rem;margin:0 0 1rem}
+details.sb li{margin-bottom:.4rem}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="p" aria-hidden="true">P</div>
+    <div>
+      <h1>I parked here</h1>
+      <p class="sub">Salva il posto quando scendi, ritrovalo quando torni.</p>
+    </div>
+  </header>
+
+  <div id="stalls" class="stalls" aria-live="polite"></div>
+
+  <section class="form" id="form">
+    <fieldset class="choose" id="choose">
+      <legend>Quale veicolo hai parcheggiato?</legend>
+      <div class="chips" id="chips"></div>
+    </fieldset>
+    <p class="no-veh hidden" id="noVeh">Prima aggiungi almeno un veicolo nella sezione "I tuoi veicoli" qui sotto.</p>
+    <label for="note">Dettagli utili (facoltativo)</label>
+    <input type="text" id="note" maxlength="120" placeholder="es. piano -2, colonna B4, vicino all'uscita" autocomplete="off">
+    <p class="hint">Nei garage il GPS è impreciso: piano e colonna ti salvano.</p>
+    <div class="photo-pick">
+      <label class="btn ghost" style="width:auto;margin:0;flex:1" for="photo">Aggiungi una foto</label>
+      <input type="file" id="photo" accept="image/*" capture="environment" class="hidden">
+      <img id="photoPrev" class="hidden" alt="Anteprima foto">
+    </div>
+    <button class="btn primary" id="saveBtn">Ho parcheggiato qui</button>
+    <p class="status" id="status"></p>
+  </section>
+
+  <div id="histWrap" class="hidden">
+    <h2>Parcheggi precedenti</h2>
+    <ol class="hist" id="hist"></ol>
+  </div>
+
+  <details class="sb" id="vehPanel">
+    <summary><span>I tuoi veicoli</span><span class="state" id="vehCount"></span></summary>
+    <div class="inner">
+      <ul class="veh" id="vehList"></ul>
+      <label for="vehName">Aggiungi un veicolo</label>
+      <div class="add-veh">
+        <input type="text" id="vehName" maxlength="40" placeholder="es. Panda, Golf AB123CD" autocomplete="off">
+        <button class="btn ghost small" id="vehAdd">Aggiungi</button>
+      </div>
+      <p class="status" id="vehStatus"></p>
+    </div>
+  </details>
+
+
+  <details class="sb" id="sbPanel" style="margin-top:1rem">
+    <summary><span>Sincronizzazione Supabase (facoltativa)</span><span class="state" id="sbState">Non collegato</span></summary>
+    <div class="inner">
+      <div id="sbSetup">
+        <p class="hint" style="margin-top:0">Senza Supabase l'app funziona lo stesso: i dati restano su questo telefono. Collegala se vuoi gli stessi dati su più dispositivi.</p>
+        <ol>
+          <li>Nel tuo progetto Supabase apri <b>SQL Editor</b>, incolla questo script ed eseguilo (una volta sola).
+            <pre class="sql" id="sqlText"></pre>
+            <button class="btn ghost small" id="copySql">Copia SQL</button>
+          </li>
+          <li>In <b>Project Settings → API</b> copia l'URL del progetto e la chiave pubblica (anon o publishable).</li>
+        </ol>
+        <div class="field">
+          <label for="sbUrl">URL del progetto</label>
+          <input type="text" id="sbUrl" placeholder="https://xxxx.supabase.co" autocomplete="off" inputmode="url">
+        </div>
+        <div class="field">
+          <label for="sbKey">Chiave pubblica (anon / publishable)</label>
+          <input type="text" id="sbKey" placeholder="eyJ… oppure sb_publishable_…" autocomplete="off">
+          <p class="hint">Non usare la chiave service_role: quella non va mai messa in un'app.</p>
+        </div>
+        <div class="field">
+          <label for="sbCodeIn">Codice di sincronizzazione (solo dal secondo dispositivo)</label>
+          <input type="text" id="sbCodeIn" placeholder="Lascia vuoto al primo collegamento" autocomplete="off">
+        </div>
+        <button class="btn primary" id="sbConnect">Collega</button>
+      </div>
+      <div id="sbLinked" class="hidden">
+        <p class="hint" style="margin-top:0">Per usare gli stessi dati su un altro dispositivo, inserisci lì URL, chiave e questo codice. Tienilo per te: chi lo conosce può leggere i tuoi parcheggi.</p>
+        <div class="code-box"><input type="text" id="sbCode" readonly><button class="btn ghost small" id="copyCode">Copia</button></div>
+        <button class="btn ghost mt" id="sbDisconnect">Scollega da Supabase</button>
+      </div>
+      <p class="status" id="sbStatus"></p>
+    </div>
+  </details>
+
+  <p class="sync" id="sync"></p>
+</main>
+
+<script>
+(function(){
+  var state = { vehicles:[], spots:{}, history:[], updatedAt:0 };
+  var selectedVeh = null;
+  var pendingPhoto = null;
+  var $ = function(id){ return document.getElementById(id); };
+
+  // ================= storage locale =================
+  var LS_KEY = 'parcheggio-v1';
+  function lsGet(k){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){ return null; } }
+  function lsSet(k,v){ try{ v==null?localStorage.removeItem(k):localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+
+  // ================= Supabase (facoltativo, REST senza librerie) =================
+  var CFG_KEY='parcheggio-supabase';
+  var SQL = [
+    "-- Tabella senza accesso diretto: si legge e scrive solo tramite le due funzioni",
+    "create table if not exists public.parcheggi (",
+    "  code text primary key check (length(code) >= 24),",
+    "  data jsonb not null,",
+    "  updated_at timestamptz not null default now()",
+    ");",
+    "alter table public.parcheggi enable row level security;",
+    "",
+    "create or replace function public.parcheggio_get(p_code text)",
+    "returns jsonb language sql security definer set search_path = public as $$",
+    "  select data from public.parcheggi where code = p_code;",
+    "$$;",
+    "",
+    "create or replace function public.parcheggio_set(p_code text, p_data jsonb)",
+    "returns void language plpgsql security definer set search_path = public as $$",
+    "begin",
+    "  if length(p_code) < 24 then raise exception 'codice non valido'; end if;",
+    "  insert into public.parcheggi (code, data, updated_at) values (p_code, p_data, now())",
+    "  on conflict (code) do update set data = excluded.data, updated_at = now();",
+    "end;",
+    "$$;",
+    "",
+    "revoke all on function public.parcheggio_get(text) from public;",
+    "revoke all on function public.parcheggio_set(text, jsonb) from public;",
+    "grant execute on function public.parcheggio_get(text) to anon, authenticated;",
+    "grant execute on function public.parcheggio_set(text, jsonb) to anon, authenticated;"
+  ].join("\n");
+  $('sqlText').textContent = SQL;
+
+  var cfg = lsGet(CFG_KEY);
+  function normUrl(u){ u=(u||'').trim().replace(/\/+$/,''); if(u && !/^https?:\/\//.test(u)) u='https://'+u; return u; }
+  function newCode(){ var a=new Uint8Array(18); crypto.getRandomValues(a); return Array.from(a,function(b){return b.toString(16).padStart(2,'0');}).join(''); }
+  async function rpc(c, fn, body){
+    var r = await fetch(c.url + '/rest/v1/rpc/' + fn, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':c.key,'Authorization':'Bearer '+c.key},
+      body:JSON.stringify(body)
+    });
+    var txt = await r.text();
+    if(!r.ok){
+      var msg = txt; try{ var j=JSON.parse(txt); msg=j.message||j.hint||txt; }catch(e){}
+      var err = new Error(msg); err.status = r.status; throw err;
+    }
+    return txt ? JSON.parse(txt) : null;
+  }
+  function explain(e){
+    if(e instanceof TypeError) return 'Server non raggiungibile. Controlla l\'URL e la connessione.';
+    if(e.status===401||e.status===403) return 'Chiave non valida o non autorizzata. Usa la chiave anon/publishable.';
+    if(e.status===404) return 'Funzioni non trovate: esegui prima lo script SQL nel progetto.';
+    return 'Errore Supabase: ' + e.message;
+  }
+  function makeRemote(){
+    if(!cfg) return null;
+    return {
+      load: function(){ return rpc(cfg,'parcheggio_get',{p_code:cfg.code}); },
+      save: function(st){ return rpc(cfg,'parcheggio_set',{p_code:cfg.code,p_data:st}); }
+    };
+  }
+  var remote = makeRemote();
+  function copy(text,btn){
+    (navigator.clipboard?navigator.clipboard.writeText(text):Promise.reject()).then(function(){
+      var o=btn.textContent; btn.textContent='Copiato'; setTimeout(function(){btn.textContent=o;},1500);
+    }).catch(function(){ setStatus('sbStatus','Copia non riuscita: seleziona il testo e copialo a mano.',true); });
+  }
+
+  function migrate(d){
+    if(!d) return null;
+    d.vehicles = d.vehicles || [];
+    d.spots = d.spots || {};
+    d.history = d.history || [];
+    if(d.current || (d.history.length && !d.vehicles.length)){
+      var v = {id:uid(), name:'La mia auto'};
+      d.vehicles.push(v);
+      if(d.current) d.spots[v.id] = d.current;
+      d.history.forEach(function(h){ if(!h.vid){ h.vid=v.id; h.vname=v.name; } });
+    }
+    delete d.current;
+    return d;
+  }
+  function uid(){ var a=new Uint8Array(6); crypto.getRandomValues(a); return Array.from(a,function(b){return b.toString(16).padStart(2,'0');}).join(''); }
+  function vehById(id){ return state.vehicles.find(function(v){ return v.id===id; }); }
+
+  // ================= utilità =================
+  function fmtWhen(ts){
+    var d=new Date(ts), now=new Date();
+    var time=d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    var y=new Date(now); y.setDate(now.getDate()-1);
+    if(d.toDateString()===now.toDateString()) return 'Oggi, '+time;
+    if(d.toDateString()===y.toDateString()) return 'Ieri, '+time;
+    return d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'})+', '+time;
+  }
+  function ago(ts){
+    var m=Math.round((Date.now()-ts)/60000);
+    if(m<1) return 'proprio adesso';
+    if(m<60) return m+' min fa';
+    var h=Math.round(m/60);
+    if(h<48) return h+(h===1?' ora fa':' ore fa');
+    return Math.round(h/24)+' giorni fa';
+  }
+  function mapsUrl(p){ return p.lat!=null ? 'https://www.google.com/maps/dir/?api=1&destination='+p.lat+','+p.lng+'&travelmode=walking' : null; }
+  function esc(s){ var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+  function setStatus(id,t,err){ var s=$(id); s.textContent=t||''; s.className='status'+(err?' err':''); }
+  function status(t,err){ setStatus('status',t,err); }
+
+  // ================= render =================
+  function render(freshId){
+    var st=$('stalls'), parked=state.vehicles.filter(function(v){ return state.spots[v.id]; });
+    if(!parked.length){
+      st.innerHTML='<div class="stall empty"><p class="empty-txt">Nessun parcheggio salvato<small>'+
+        (state.vehicles.length?'Appena parcheggi, scegli il veicolo e premi il pulsante qui sotto.':'Aggiungi i tuoi veicoli, poi salva il parcheggio quando scendi.')+'</small></p></div>';
+    }else{
+      st.innerHTML=parked.map(function(v){
+        var c=state.spots[v.id], url=mapsUrl(c);
+        var html='<div class="stall'+(freshId===v.id?' fresh':'')+'"><span class="car">'+esc(v.name)+'</span>'+
+          '<p class="when">'+esc(fmtWhen(c.ts))+'</p><p class="ago">'+esc(ago(c.ts))+'</p>';
+        if(c.note) html+='<p class="note">'+esc(c.note)+'</p>';
+        if(c.photo) html+='<img src="'+c.photo+'" alt="Foto del parcheggio di '+esc(v.name)+'">';
+        html+= c.lat!=null
+          ? '<p class="meta">Posizione GPS salvata'+(c.acc?' (precisione circa '+Math.round(c.acc)+' m)':'')+'</p>'
+          : '<p class="meta">Posizione GPS non disponibile: affidati ai dettagli e alla foto.</p>';
+        html+='<div class="row">';
+        if(url) html+='<a class="btn go" href="'+url+'" target="_blank" rel="noopener">Portami alla '+esc(v.name)+'</a>';
+        html+='<button class="btn ghost" data-leave="'+v.id+'">Ho ripreso '+esc(v.name)+'</button></div></div>';
+        return html;
+      }).join('');
+      st.querySelectorAll('[data-leave]').forEach(function(b){ b.onclick=function(){ leave(b.getAttribute('data-leave')); }; });
+    }
+
+    // scelta veicolo (obbligatoria)
+    var has=state.vehicles.length>0;
+    $('choose').classList.toggle('hidden',!has);
+    $('noVeh').classList.toggle('hidden',has);
+    if(selectedVeh && !vehById(selectedVeh)) selectedVeh=null;
+    $('chips').innerHTML=state.vehicles.map(function(v){
+      return '<label class="chip"><input type="radio" name="veh" value="'+v.id+'"'+(selectedVeh===v.id?' checked':'')+'><span>'+esc(v.name)+
+        (state.spots[v.id]?'<small>già parcheggiata</small>':'')+'</span></label>';
+    }).join('');
+    $('chips').querySelectorAll('input').forEach(function(i){ i.onchange=function(){ selectedVeh=i.value; updateSaveBtn(); status(''); }; });
+    updateSaveBtn();
+
+    // elenco veicoli
+    $('vehCount').textContent=state.vehicles.length?state.vehicles.length+(state.vehicles.length===1?' veicolo':' veicoli'):'Nessuno';
+    $('vehList').innerHTML=state.vehicles.map(function(v){
+      return '<li><span class="nm">'+esc(v.name)+'</span><button class="link" data-ren="'+v.id+'">Rinomina</button><button class="link del" data-del="'+v.id+'">Elimina</button></li>';
+    }).join('');
+    $('vehList').querySelectorAll('[data-ren]').forEach(function(b){ b.onclick=function(){ renameVeh(b.getAttribute('data-ren')); }; });
+    $('vehList').querySelectorAll('[data-del]').forEach(function(b){ b.onclick=function(){ deleteVeh(b.getAttribute('data-del')); }; });
+    if(!has) $('vehPanel').open=true;
+
+    // storico
+    var h=state.history||[];
+    $('histWrap').classList.toggle('hidden',h.length===0);
+    $('hist').innerHTML=h.map(function(p){
+      var u=mapsUrl(p), v=vehById(p.vid), name=v?v.name:(p.vname||'');
+      return '<li><div><div class="t">'+esc(name?name+', ':'')+esc(fmtWhen(p.ts))+'</div>'+(p.note?'<div class="n">'+esc(p.note)+'</div>':'')+'</div>'+(u?'<a href="'+u+'" target="_blank" rel="noopener">Mappa</a>':'')+'</li>';
+    }).join('');
+  }
+  function updateSaveBtn(){
+    var b=$('saveBtn'), v=selectedVeh&&vehById(selectedVeh);
+    b.disabled=!v;
+    b.textContent=v?'Ho parcheggiato '+v.name+' qui':(state.vehicles.length?'Scegli prima il veicolo':'Aggiungi un veicolo');
+  }
+  function renderSync(){
+    var on=!!cfg;
+    $('sbSetup').classList.toggle('hidden',on);
+    $('sbLinked').classList.toggle('hidden',!on);
+    $('sbState').textContent=on?'Collegato':'Non collegato';
+    if(on) $('sbCode').value=cfg.code;
+    $('sync').textContent = on ? 'Sincronizzato con Supabase.' : 'Dati salvati su questo telefono.';
+  }
+
+  async function persist(){
+    state.updatedAt=Date.now();
+    lsSet(LS_KEY,state);
+    if(!remote) return;
+    try{ await remote.save(state); }
+    catch(e){ status('Salvato su questo telefono, ma non su Supabase. '+explain(e),true); }
+  }
+  async function pull(){
+    if(!remote) return;
+    try{
+      var d=await remote.load();
+      if(d && (d.updatedAt||0) >= (state.updatedAt||0)){ state=migrate(d); lsSet(LS_KEY,state); render(); }
+      else if(state.vehicles.length||(state.history||[]).length){ await remote.save(state); }
+    }catch(e){ $('sync').textContent='Supabase non raggiungibile: uso i dati di questo telefono.'; }
+  }
+
+  // ================= azioni =================
+  var gpsErr=null;
+  function getPos(){
+    return new Promise(function(res){
+      if(!navigator.geolocation) return res(null);
+      navigator.geolocation.getCurrentPosition(
+        function(p){ res({lat:+p.coords.latitude.toFixed(6),lng:+p.coords.longitude.toFixed(6),acc:p.coords.accuracy}); },
+        function(err){ gpsErr=err&&err.code; res(null); },
+        {enableHighAccuracy:true,timeout:15000,maximumAge:0});
+    });
+  }
+  async function save(){
+    var v=selectedVeh&&vehById(selectedVeh);
+    if(!v){ status('Scegli quale veicolo hai parcheggiato.',true); return; }
+    var btn=$('saveBtn'); btn.disabled=true;
+    status('Rilevo la posizione…');
+    var pos=await getPos();
+    var spot={ts:Date.now(),note:$('note').value.trim()};
+    if(pos){ spot.lat=pos.lat; spot.lng=pos.lng; spot.acc=pos.acc; }
+    if(pendingPhoto) spot.photo=pendingPhoto;
+    if(!pos&&!spot.note&&!spot.photo){
+      updateSaveBtn();
+      status(gpsMsg()+' Puoi anche scrivere un dettaglio o aggiungere una foto e riprovare.',true);
+      return;
+    }
+    if(state.spots[v.id]) pushHistory(v,state.spots[v.id]);
+    state.spots[v.id]=spot;
+    status(pos?'Parcheggio di '+v.name+' salvato.':'Salvato senza GPS. '+gpsMsg(),!pos);
+    $('note').value=''; pendingPhoto=null; $('photoPrev').classList.add('hidden');
+    selectedVeh=null;
+    render(v.id);
+    window.scrollTo({top:0,behavior:'smooth'});
+    await persist();
+  }
+  function pushHistory(v,p){
+    state.history=[{vid:v.id,vname:v.name,ts:p.ts,note:p.note,lat:p.lat,lng:p.lng}].concat(state.history||[]).slice(0,10);
+  }
+  async function leave(id){
+    var v=vehById(id); if(!v||!state.spots[id]) return;
+    pushHistory(v,state.spots[id]); delete state.spots[id];
+    status(''); render();
+    await persist();
+  }
+
+  function gpsMsg(){
+    if(gpsErr===1) return 'Accesso alla posizione negato: abilitalo per questo sito nelle impostazioni del browser.';
+    if(gpsErr===3) return 'Il GPS non ha risposto in tempo (capita al chiuso).';
+    return 'Posizione non disponibile.';
+  }
+
+  // ================= veicoli =================
+  async function addVeh(){
+    var name=$('vehName').value.trim().replace(/\s+/g,' ');
+    if(!name) return setStatus('vehStatus','Scrivi un nome per il veicolo.',true);
+    if(state.vehicles.some(function(v){ return v.name.toLowerCase()===name.toLowerCase(); }))
+      return setStatus('vehStatus','Hai già un veicolo con questo nome.',true);
+    state.vehicles.push({id:uid(),name:name});
+    $('vehName').value=''; setStatus('vehStatus','');
+    render(); await persist();
+  }
+  async function renameVeh(id){
+    var v=vehById(id); if(!v) return;
+    var n=prompt('Nuovo nome per '+v.name,v.name); if(n==null) return;
+    n=n.trim().replace(/\s+/g,' '); if(!n||n===v.name) return;
+    if(state.vehicles.some(function(x){ return x.id!==id&&x.name.toLowerCase()===n.toLowerCase(); }))
+      return setStatus('vehStatus','Hai già un veicolo con questo nome.',true);
+    v.name=n; render(); await persist();
+  }
+  async function deleteVeh(id){
+    var v=vehById(id); if(!v) return;
+    var msg='Eliminare '+v.name+'?'+(state.spots[id]?' Il parcheggio salvato per questo veicolo verrà cancellato.':'');
+    if(!confirm(msg)) return;
+    state.vehicles=state.vehicles.filter(function(x){ return x.id!==id; });
+    delete state.spots[id];
+    render(); await persist();
+  }
+  $('vehAdd').onclick=addVeh;
+  $('vehName').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); addVeh(); } });
+
+  $('photo').addEventListener('change',function(e){
+    var f=e.target.files&&e.target.files[0]; if(!f) return;
+    var img=new Image(), url=URL.createObjectURL(f);
+    img.onload=function(){
+      var s=Math.min(1,900/Math.max(img.width,img.height));
+      var c=document.createElement('canvas'); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      var q=.7, data=c.toDataURL('image/jpeg',q);
+      while(data.length>180000&&q>.3){ q-=.1; data=c.toDataURL('image/jpeg',q); }
+      pendingPhoto=data; URL.revokeObjectURL(url);
+      var pv=$('photoPrev'); pv.src=data; pv.classList.remove('hidden');
+    };
+    img.onerror=function(){ status('Non riesco a leggere questa foto. Prova con un\'altra.',true); };
+    img.src=url;
+  });
+  $('saveBtn').addEventListener('click',save);
+
+  // ================= collegamento Supabase =================
+  $('copySql').onclick=function(){ copy(SQL,this); };
+  $('copyCode').onclick=function(){ copy(cfg.code,this); };
+  $('sbConnect').onclick=async function(){
+    var url=normUrl($('sbUrl').value), key=$('sbKey').value.trim(), code=$('sbCodeIn').value.trim().toLowerCase();
+    if(!/^https:\/\/.+/.test(url)) return setStatus('sbStatus','Inserisci l\'URL del progetto, es. https://xxxx.supabase.co',true);
+    if(!key) return setStatus('sbStatus','Inserisci la chiave pubblica del progetto.',true);
+    if(code && code.length<24) return setStatus('sbStatus','Il codice di sincronizzazione è troppo corto: copialo per intero.',true);
+    var btn=this; btn.disabled=true; setStatus('sbStatus','Verifico il collegamento…');
+    var test={url:url,key:key,code:code||newCode()};
+    try{
+      var d=await rpc(test,'parcheggio_get',{p_code:test.code});
+      if(code && !d){ btn.disabled=false; return setStatus('sbStatus','Nessun dato trovato con questo codice. Controlla di averlo copiato bene.',true); }
+      cfg=test; lsSet(CFG_KEY,cfg); remote=makeRemote();
+      await pull();
+      setStatus('sbStatus','Collegato.');
+      renderSync();
+    }catch(e){ setStatus('sbStatus',explain(e),true); }
+    btn.disabled=false;
+  };
+  $('sbDisconnect').onclick=function(){
+    if(!confirm('Scollegare Supabase? I dati restano su questo telefono e sul database.')) return;
+    cfg=null; remote=null; lsSet(CFG_KEY,null); setStatus('sbStatus',''); renderSync();
+  };
+
+  // ================= avvio =================
+  var saved=lsGet(LS_KEY); if(saved){ state=migrate(saved); }
+  render(); renderSync(); pull();
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) pull(); });
+  setInterval(function(){ if(Object.keys(state.spots).length) render(); },60000);
+})();
+
+</script>
+<script>
+if('serviceWorker' in navigator && location.protocol==='https:'){
+  window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+</script>
+</body>
+</html>
